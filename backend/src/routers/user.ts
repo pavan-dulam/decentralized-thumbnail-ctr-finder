@@ -1,9 +1,19 @@
 import { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../middlewares/auth';
-const router = Router();
+import { JWT_SECRET, ACCESS_KEY, SECRET_KEY, REGION } from '../config';
+import { authMiddleware } from '../middlewares/auth';
+import { S3Client } from '@aws-sdk/client-s3';
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 
+const router = Router();
+const s3Client = new S3Client({
+	credentials: {
+		accessKeyId: ACCESS_KEY,
+		secretAccessKey: SECRET_KEY
+	},
+	region: REGION
+});
 const prismaClient = new PrismaClient();
 
 //signin with wallet
@@ -45,6 +55,29 @@ router.post('/signin', async (req, res) => {
 			token
 		});
 	}
+});
+
+router.get('/presignedUrl', authMiddleware, async (req, res) => {
+	//@ts-ignore
+	const userId = req.userId;
+	const date: string = new Date().toDateString();
+
+	const { url, fields } = await createPresignedPost(s3Client, {
+		Bucket: 'decentralized-thumbnail-ctr-finder',
+		Key: `thumbnail/${userId}/${date}/Image${Math.floor(
+			Math.random() * 10
+		)}.jpg`,
+		Conditions: [
+			['content-length-range', 0, 5 * 1024 * 1024] // 5 MB max
+		],
+
+		Expires: 3600
+	});
+
+	res.status(200).json({
+		url,
+		fields
+	});
 });
 
 export default router;
