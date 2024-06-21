@@ -1,7 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET, ACCESS_KEY, SECRET_KEY, REGION } from '../config';
+import {
+	JWT_SECRET,
+	ACCESS_KEY,
+	SECRET_KEY,
+	REGION,
+	TOTAL_DECIMALS
+} from '../config';
 import { authMiddleware } from '../middlewares/auth';
 import { S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
@@ -101,7 +107,7 @@ router.post('/task', authMiddleware, async (req, res) => {
 				title: parseData.data.title,
 				user_id: userId,
 				//TODO: fix hardcoded value once frontend is setup
-				amount: '1',
+				amount: 1 * TOTAL_DECIMALS,
 				signature: 'signature'
 			}
 		});
