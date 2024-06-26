@@ -1,10 +1,9 @@
 'use client';
-
-import { useState } from 'react';
-import axios from 'axios';
 import { BACKEND_URL, CLOUDFRONT_URL } from '@/config';
+import axios from 'axios';
+import { useState } from 'react';
 
-export async function UploadImage({
+export function UploadImage({
 	onImageAdded,
 	image
 }: {
@@ -25,10 +24,9 @@ export async function UploadImage({
 					}
 				}
 			);
-
-			const preSignedUrl = response.data.preSignedUrl;
+			console.log('response=', response);
+			const presignedUrl = response.data.url;
 			const formData = new FormData();
-
 			formData.set('bucket', response.data.fields['bucket']);
 			formData.set(
 				'X-Amz-Algorithm',
@@ -54,34 +52,47 @@ export async function UploadImage({
 				response.data.fields['X-Amz-Algorithm']
 			);
 			formData.append('file', file);
-
-			const awsResponse = await axios.post(preSignedUrl, formData);
+			const awsResponse = await axios.post(presignedUrl, formData);
+			console.log('awsResponse=', awsResponse);
 			onImageAdded(`${CLOUDFRONT_URL}/${response.data.fields['key']}`);
 		} catch (e) {
-			console.log('error:', e);
+			console.log('error=', e);
 		}
 		setUploading(false);
 	}
+
+	if (image) {
+		return <img className={'p-2 w-96 rounded'} src={image} />;
+	}
+
 	return (
-		<div className='w-40 h-40 rounded border text-2xl cursor'>
-			<div className='h-full flex justify-center relative w-full'>
-				<div className='h-full flex justify-center w-full pt-16 text-4xl'>
-					+
-					<input
-						className='w-full h-full bg-red-400 w-40 h-40'
-						type='file'
-						style={{
-							opacity: 0,
-							position: 'absolute',
-							top: 0,
-							bottom: 0,
-							left: 0,
-							right: 0,
-							width: '100%',
-							height: '100%'
-						}}
-						onChange={onFileSelect}
-					/>
+		<div>
+			<div className='w-40 h-40 rounded border text-2xl cursor-pointer'>
+				<div className='h-full flex justify-center flex-col relative w-full'>
+					<div className='h-full flex justify-center w-full pt-16 text-4xl'>
+						{uploading ? (
+							<div className='text-sm'>Loading...</div>
+						) : (
+							<>
+								+
+								<input
+									className='w-full h-full bg-red-400 w-40 h-40'
+									type='file'
+									style={{
+										position: 'absolute',
+										opacity: 0,
+										top: 0,
+										left: 0,
+										bottom: 0,
+										right: 0,
+										width: '100%',
+										height: '100%'
+									}}
+									onChange={onFileSelect}
+								/>
+							</>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
